@@ -21,9 +21,13 @@ export default {
 
         sourceElement.addClass('draggable-element');
 
-        handleElement.on('mousedown', function () {
-            element.setAttribute('draggable', 'true');
-        });
+        handleElement
+			.on('mousedown', function () {
+				element.setAttribute('draggable', 'true');
+			})
+			.on('mouseup', function () {
+				sourceElement.removeAttr('draggable');
+			});
 
         sourceElement
             .on('dragstart', function (event) {
@@ -36,6 +40,10 @@ export default {
             .on('dragleave', function () {
                 $(this).removeClass('over');
             })
+			.on('dragover', (event) => {
+				event.preventDefault();
+				return false;
+			})
             .on('drop', (event) => {
                 event.stopPropagation();
                 if (draggableElementIndex !== index) {
@@ -56,7 +64,6 @@ export default {
                     const element = $(row);
                     element.removeClass('over');
                     element.removeClass('moving');
-                    element.removeAttr('draggable');
                 });
             });
     },

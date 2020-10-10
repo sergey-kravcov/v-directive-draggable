@@ -96,6 +96,18 @@ describe('directive draggable', function () {
             expect(targetElement.attributes().draggable).toBeTruthy();
         });
 
+        it('the mouseup event must be initialized, when triggered, the attribute draggable is false', () => {
+            const handleSelector = '.handle';
+            createVueWrapper({
+                handleSelector,
+            });
+            const targetElement = wrapper.find('.draggable');
+            targetElement.element.setAttribute('draggable', 'true');
+            const handleElement= wrapper.find(`.draggable ${handleSelector}`);
+            handleElement.trigger('mouseup');
+            expect(targetElement.attributes().draggable).toBeFalsy();
+        });
+
         it('the dragstart event must be initialized, when triggered, the class moving is true', () => {
             createVueWrapper({});
             const targetElement = wrapper.find('.draggable');
@@ -116,6 +128,13 @@ describe('directive draggable', function () {
             $(targetElement.element).addClass('over');
             expect(targetElement.classes()).toContain('over');
             targetElement.trigger('dragleave');
+            expect(targetElement.classes()).not.toContain('over');
+        });
+
+        it('the dragover event must be initialized, when triggered, the class over is false', () => {
+            createVueWrapper({});
+            const targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragover');
             expect(targetElement.classes()).not.toContain('over');
         });
 
@@ -144,11 +163,9 @@ describe('directive draggable', function () {
             const targetElement = wrapper.find('.draggable');
             $(targetElement.element).addClass('over');
             $(targetElement.element).addClass('moving');
-            targetElement.element.setAttribute('draggable', 'true');
             targetElement.trigger('dragend');
             expect(targetElement.classes()).not.toContain('over');
             expect(targetElement.classes()).not.toContain('moving');
-            expect(targetElement.attributes().draggable).toBeFalsy();
         });
     });
 });
