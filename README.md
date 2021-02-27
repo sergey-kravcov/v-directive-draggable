@@ -26,7 +26,7 @@ Vue.use(VueDraggable)
       v-for="(item, index) in dataSource"
       v-draggable="{ handleSelector: '.handle', groupName: 'unique_string', ordinalIndex: index }"
       :key="index"
-      @dragRow="dragRow"
+      @drag-row="dragRow"
     >
       <div class="handle">*</div>
       <div>{{ item.name }}</div>
@@ -74,7 +74,7 @@ import Vue from 'vue'
 import VueDraggable from 'v-directive-draggable'
 
 Vue.use(VueDraggable, {
-	name: 'drag'
+  name: 'drag'
 })
 
 # or
@@ -82,9 +82,9 @@ Vue.use(VueDraggable, {
 import VueDraggable from 'v-directive-draggable'
 
 export default {
-	directives: {
-		drag: draggable,
-	},
+  directives: {
+    drag: draggable,
+  },
 };
 ```
 
@@ -108,22 +108,22 @@ export default {
 
 ## Event Handler
 
-- dragRow
+- drag-row
 
-### dragRow
+### drag-row
 
 The function to be called by any relevant container when drop is over.
 ```js
 function dragRow(event) {
-	const { newIndex, oldIndex } = event.detail;
-	...
+  const { newIndex, oldIndex } = event.detail;
+  ...
 }
 ```
 #### Parameters
 - **event** : `object`
-	- **detail** : `object` 
-		- **oldIndex** : `number` : index of the dragged row.
-		- **newIndex** : `number` : the index of the line to which the drag occurred (the new index of the line being dragged).
+  - **detail** : `object` 
+    - **oldIndex** : `number` : index of the dragged row.
+    - **newIndex** : `number` : the index of the line to which the drag occurred (the new index of the line being dragged).
 
 ## CSS selectors
 
