@@ -24,7 +24,7 @@ Vue.use(VueDraggable)
   <div>
     <div
       v-for="(item, index) in dataSource"
-      v-draggable="{ handleSelector: '.handle', index }"
+      v-draggable="{ handleSelector: '.handle', groupName: 'unique_string', ordinalIndex: index }"
       :key="index"
       @dragRow="dragRow"
     >
@@ -93,7 +93,8 @@ export default {
 | Property | Type | Description |
 |-|:-:|-|
 |handleSelector|string|the name of the block selector with which the drag will be performed|
-|index|number|index of the dragged row that will be passed as information when events are triggered|
+|groupName|string|the name of a group of elements within which dragging is possible|
+|ordinalIndex|number|index of the dragged row that will be passed as information when events are triggered|
 
 ---
 

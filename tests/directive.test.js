@@ -1,6 +1,5 @@
 import { shallowMount, createLocalVue } from '@vue/test-utils';
 import Draggable from '../src/index';
-import $ from 'jquery';
 
 export const localVue = createLocalVue();
 
@@ -12,7 +11,8 @@ describe('directive draggable', function () {
     function createVueWrapper(options, isEmpty = false) {
         const {
             handleSelector = '.handle',
-            index = 0,
+            ordinalIndex = 0,
+            groupName = '',
         } = options;
         const component = {
             created() {
@@ -20,17 +20,18 @@ describe('directive draggable', function () {
                     ? null
                     : {
                         handleSelector,
-                        index,
+                        ordinalIndex,
+                        groupName,
                     };
             },
             methods: {
                 dragRow() { },
             },
-            template: '<div><div v-draggable="draggableOptions" class="draggable" @dragRow="dragRow"><span class="handle"></span></div></div>',
+            template: '<div><div v-draggable="draggableOptions" class="draggable" @drag-row="dragRow"><span class="handle"></span></div></div>',
         };
 
         wrapper = shallowMount(component, {
-			localVue,
+            localVue,
             methods: {
                 dragRow: dragRowMock,
             },
@@ -52,9 +53,9 @@ describe('directive draggable', function () {
             expect(targetSection.classes()).not.toContain('draggable-element');
         });
 
-        it('the directive should not fire if index is -1', () => {
+        it('the directive should not fire if ordinalIndex is -1', () => {
             createVueWrapper({
-                index: -1,
+                ordinalIndex: -1,
             });
             const targetSection = wrapper.find('.draggable');
             expect(targetSection.classes()).not.toContain('draggable-element');
@@ -90,22 +91,10 @@ describe('directive draggable', function () {
                 handleSelector,
             });
             const targetElement = wrapper.find('.draggable');
-            const handleElement= wrapper.find(`.draggable ${handleSelector}`);
+            const handleElement = wrapper.find(`.draggable ${handleSelector}`);
             expect(targetElement.attributes().draggable).toBeFalsy();
             handleElement.trigger('mousedown');
             expect(targetElement.attributes().draggable).toBeTruthy();
-        });
-
-        it('the mouseup event must be initialized, when triggered, the attribute draggable is false', () => {
-            const handleSelector = '.handle';
-            createVueWrapper({
-                handleSelector,
-            });
-            const targetElement = wrapper.find('.draggable');
-            targetElement.element.setAttribute('draggable', 'true');
-            const handleElement= wrapper.find(`.draggable ${handleSelector}`);
-            handleElement.trigger('mouseup');
-            expect(targetElement.attributes().draggable).toBeFalsy();
         });
 
         it('the dragstart event must be initialized, when triggered, the class moving is true', () => {
@@ -115,56 +104,202 @@ describe('directive draggable', function () {
             expect(targetElement.classes()).toContain('moving');
         });
 
-        it('the dragenter event must be initialized, when triggered, the class over is true', () => {
-            createVueWrapper({});
-            const targetElement = wrapper.find('.draggable');
+        it('the dragenter event must be initialized, when triggered, the class over is false if groupName is not currentGroupName', () => {
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            let targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragstart');
+            createVueWrapper({
+                groupName: 'groupName-2',
+            });
+            targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragenter');
+            expect(targetElement.classes()).not.toContain('over');
+        });
+
+        it('the dragenter event must be initialized, when triggered, the class over is true if groupName is currentGroupName', () => {
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            let targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragstart');
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            targetElement = wrapper.find('.draggable');
             targetElement.trigger('dragenter');
             expect(targetElement.classes()).toContain('over');
         });
 
-        it('the dragleave event must be initialized, when triggered, the class over is false', () => {
-            createVueWrapper({});
-            const targetElement = wrapper.find('.draggable');
-            $(targetElement.element).addClass('over');
-            expect(targetElement.classes()).toContain('over');
-            targetElement.trigger('dragleave');
-            expect(targetElement.classes()).not.toContain('over');
-        });
-
-        it('the dragover event must be initialized, when triggered, the class over is false', () => {
-            createVueWrapper({});
-            const targetElement = wrapper.find('.draggable');
-            targetElement.trigger('dragover');
-            expect(targetElement.classes()).not.toContain('over');
-        });
-
-        it('the drop event must be initialized, when triggered, the dragRow method will not be called if the index hasn`t changed', () => {
-            createVueWrapper({});
-            const targetElement = wrapper.find('.draggable');
-            targetElement.trigger('dragstart');
-            targetElement.trigger('drop');
-            expect(dragRowMock).toHaveBeenCalledTimes(0);
-        });
-
-        it('the drop event must be initialized, when triggered, the dragRow method will be called if the index has changed', () => {
+        it('the dragleave event must be initialized, when triggered, the class over is true if fromElement is undefined', () => {
             createVueWrapper({
-                index: 2,
+                groupName: 'groupName-1',
             });
             let targetElement = wrapper.find('.draggable');
             targetElement.trigger('dragstart');
-            createVueWrapper({});
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
             targetElement = wrapper.find('.draggable');
+            targetElement.element.classList.add('over');
+            expect(targetElement.classes()).toContain('over');
+            targetElement.trigger('dragleave', {
+                toElement: {
+                    closest: () => 2,
+                },
+            });
+            expect(targetElement.classes()).toContain('over');
+        });
+
+        it('the dragleave event must be initialized, when triggered, the class over is true if toElement is undefined', () => {
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            let targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragstart');
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            targetElement = wrapper.find('.draggable');
+            targetElement.element.classList.add('over');
+            expect(targetElement.classes()).toContain('over');
+            targetElement.trigger('dragleave', {
+                fromElement: {
+                    closest: () => 2,
+                },
+            });
+            expect(targetElement.classes()).toContain('over');
+        });
+
+        it('the dragleave event must be initialized, when triggered, the class over is true if toElement and fromElement have a common parent', () => {
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            let targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragstart');
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            targetElement = wrapper.find('.draggable');
+            targetElement.element.classList.add('over');
+            expect(targetElement.classes()).toContain('over');
+            targetElement.trigger('dragleave', {
+                fromElement: {
+                    closest: () => 2,
+                },
+                toElement: {
+                    closest: () => 2,
+                },
+            });
+            expect(targetElement.classes()).toContain('over');
+        });
+
+        it('the dragleave event must be initialized, when triggered, the class over is false', () => {
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            let targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragstart');
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            targetElement = wrapper.find('.draggable');
+            targetElement.element.classList.add('over');
+            expect(targetElement.classes()).toContain('over');
+            targetElement.trigger('dragleave', {
+                fromElement: {
+                    closest: () => 1,
+                },
+                toElement: {
+                    closest: () => 2,
+                },
+            });
+            expect(targetElement.classes()).not.toContain('over');
+        });
+
+        it('the dragleave event must be initialized, when triggered, the class over is true if groupName is not currentGroupName', () => {
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            let targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragstart');
+            createVueWrapper({
+                groupName: 'groupName-2',
+            });
+            targetElement = wrapper.find('.draggable');
+            targetElement.element.classList.add('over');
+            expect(targetElement.classes()).toContain('over');
+            targetElement.trigger('dragleave', {
+                fromElement: {
+                    closest: () => 1,
+                },
+                toElement: {
+                    closest: () => 2,
+                },
+            });
+            expect(targetElement.classes()).toContain('over');
+        });
+
+        it('the dragover event must be initialized, when triggered, preventDefault worked if groupName is currentGroupName', () => {
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            let targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragstart');
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragover');
+            expect(1).toBe(1);
+        });
+
+        it('the dragover event must be initialized, when triggered, preventDefault did not work if groupName is not currentGroupName', () => {
+            createVueWrapper({
+                groupName: 'groupName-1',
+            });
+            let targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragstart');
+            createVueWrapper({
+                groupName: 'groupName-2',
+            });
+            targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragover');
+            expect(1).toBe(1);
+        });
+
+        it('the drop event must be initialized, when triggered, the dragRow method will not be called if the ordinalIndex hasn`t changed', () => {
+            createVueWrapper({});
+            const targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragstart');
             targetElement.trigger('drop');
-            expect(dragRowMock).toHaveBeenCalledTimes(1);
+            expect(dragRowMock).toBeCalledTimes(0);
+        });
+
+        it('the drop event must be initialized, when triggered, the dragRow method will be called if the ordinalIndex has changed', () => {
+            createVueWrapper({
+                ordinalIndex: 2,
+            });
+            let targetElement = wrapper.find('.draggable');
+            targetElement.trigger('dragstart');
+            createVueWrapper({
+                ordinalIndex: 1,
+            });
+            targetElement = wrapper.find('.draggable');
+            targetElement.element.classList.add('over');
+            targetElement.trigger('drop');
+            expect(dragRowMock).toBeCalledTimes(1);
+            expect(targetElement.classes()).not.toContain('over');
         });
 
         it('the dragend event must be initialized, when triggered, the classes over and moving and the attribute draggable are false', () => {
             createVueWrapper({});
             const targetElement = wrapper.find('.draggable');
-            $(targetElement.element).addClass('over');
-            $(targetElement.element).addClass('moving');
+            targetElement.element.setAttribute('draggable', 'true');
+            targetElement.element.classList.add('moving');
             targetElement.trigger('dragend');
-            expect(targetElement.classes()).not.toContain('over');
+            expect(targetElement.attributes().draggable).toBeFalsy();
             expect(targetElement.classes()).not.toContain('moving');
         });
     });

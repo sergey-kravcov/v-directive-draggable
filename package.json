@@ -1,6 +1,6 @@
 {
   "name": "v-directive-draggable",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Vue directive to drag and drop elements",
   "main": "src/index.js",
   "scripts": {
@@ -24,9 +24,6 @@
     "url": "https://github.com/SergeyKravcov/v-directive-draggable/issues"
   },
   "homepage": "https://github.com/SergeyKravcov/v-directive-draggable#readme",
-  "dependencies": {
-    "jquery": "3.3.1"
-  },
   "devDependencies": {
     "@babel/preset-env": "^7.11.0",
     "@vue/test-utils": "1.0.0-beta.29",

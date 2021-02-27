@@ -1,70 +1,71 @@
-import $ from 'jquery';
-
 let draggableElementIndex;
+let currentGroupName;
 
 export default {
     bind: (element, binding) => {
-        const { handleSelector = '', index = -1 } = binding.value || {};
+        const { handleSelector = '', groupName = '', ordinalIndex = -1 } = binding.value || {};
 
-        if (index === -1) {
+        if (ordinalIndex === -1) {
             return;
         }
-        const sourceElement = $(element);
-        let handleElement = sourceElement;
+        let handleElement = element;
         if (handleSelector) {
-            const handles = sourceElement.find(handleSelector);
+            const handles = element.querySelectorAll(handleSelector);
             if (!handles.length) {
                 return;
             }
-            handleElement = $(handles[0]);
+            handleElement = handles[0];
         }
 
-        sourceElement.addClass('draggable-element');
+        element.classList.add('draggable-element');
 
-        handleElement
-			.on('mousedown', function () {
-				element.setAttribute('draggable', 'true');
-			})
-			.on('mouseup', function () {
-				sourceElement.removeAttr('draggable');
-			});
+        handleElement.addEventListener('mousedown', function () {
+            element.setAttribute('draggable', 'true');
+        });
 
-        sourceElement
-            .on('dragstart', function (event) {
-                $(this).addClass('moving');
-                draggableElementIndex = index;
-            })
-            .on('dragenter', function () {
-                $(this).addClass('over');
-            })
-            .on('dragleave', function () {
-                $(this).removeClass('over');
-            })
-			.on('dragover', (event) => {
-				event.preventDefault();
-				return false;
-			})
-            .on('drop', (event) => {
-                event.stopPropagation();
-                if (draggableElementIndex !== index) {
-                    const dragRowEvent = new CustomEvent('dragRow', {
-                        detail: {
-                            oldIndex: draggableElementIndex,
-                            newIndex: index,
-                        },
-                    });
-                    element.dispatchEvent(dragRowEvent);
+        element.addEventListener('dragstart', function () {
+            this.classList.add('moving');
+            draggableElementIndex = ordinalIndex;
+            currentGroupName = groupName;
+        });
+        element.addEventListener('dragenter', function () {
+            if (currentGroupName === groupName) {
+                this.classList.add('over');
+            }
+        });
+        element.addEventListener('dragleave', function (event) {
+            if (currentGroupName === groupName) {
+                const needRemoveClass = event.fromElement && event.toElement
+                    && event.fromElement.closest('.draggable-element') !== event.toElement.closest('.draggable-element');
+                if (needRemoveClass) {
+                    this.classList.remove('over');
                 }
-
-                return false;
-            })
-            .on('dragend', function () {
-                const rows = this.parentElement.querySelectorAll('.draggable-element');
-                [].forEach.call(rows, (row) => {
-                    const element = $(row);
-                    element.removeClass('over');
-                    element.removeClass('moving');
+            }
+        });
+        element.addEventListener('dragover', function (event) {
+            if (currentGroupName === groupName) {
+                event.preventDefault();
+            }
+            return false;
+        });
+        element.addEventListener('drop', function (event) {
+            event.stopPropagation();
+            if (draggableElementIndex !== ordinalIndex) {
+                const dragRowEvent = new CustomEvent('drag-row', {
+                    detail: {
+                        oldIndex: draggableElementIndex,
+                        newIndex: ordinalIndex,
+                    },
                 });
-            });
+                element.dispatchEvent(dragRowEvent);
+            }
+
+            this.classList.remove('over');
+            return false;
+        });
+        element.addEventListener('dragend', function () {
+            this.classList.remove('moving');
+            this.removeAttribute('draggable');
+        });
     },
 };
